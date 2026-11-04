@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>分析結果｜企業文件新舊版本差異分析助手</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% macro segs(list) -%}
+{%- for s in list -%}{%- if s.t == 'equal' -%}{{ s.text }}{%- else -%}<span class="chg chg-{{ s.t }}">{{ s.text }}</span>{%- endif -%}{%- endfor -%}
+{%- endmacro %}
+<div class="container">
+  <header class="hero"><h1>企業文件新舊版本差異分析助手</h1></header>
+
+  {% if error %}
+  <section class="card error-card">
+    <h2>無法完成分析</h2>
+    <p>{{ error }}</p>
+    <a class="btn btn-secondary" href="{{ url_for('index') }}">返回首頁</a>
+  </section>
+  {% else %}
+  <section class="card">
+    <h2>分析概要</h2>
+    <div class="meta">
+      <div>舊版本：{{ result.old_name }}</div>
+      <div>新版本：{{ result.new_name }}</div>
+      <div>比對時間：{{ result.created_at }}</div>
+    </div>
+    <div class="stats">
+      <div class="stat added"><b>{{ result.stats.added }}</b>新增</div>
+      <div class="stat deleted"><b>{{ result.stats.deleted }}</b>刪除</div>
+      <div class="stat modified"><b>{{ result.stats.modified }}</b>修改</div>
+      <div class="stat"><b>{{ result.stats.total }}</b>合計</div>
+    </div>
+    <div class="actions">
+      <a class="btn btn-primary" href="{{ url_for('download', job_id=job_id) }}">下載 Word 差異報告</a>
+      <a class="btn btn-secondary" href="{{ url_for('index') }}">重新比對</a>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>差異內容</h2>
+    {% if not result['items'] %}
+      <p><strong>兩份文件未發現段落差異</strong></p>
+    {% endif %}
+    {% for item in result['items'] %}
+    <article class="diff-item type-{{ item.type }}">
+      <div class="diff-head">
+        <span class="badge badge-{{ item.type }}">{{ item.type_label }}</span>
+        <span>#{{ item.id }}　{{ item.position }}</span>
+      </div>
+      {% if item.type == 'added' %}
+        <p class="text added"><strong>【新增】</strong>{{ segs(item.new_segments) }}</p>
+      {% elif item.type == 'deleted' %}
+        <p class="text removed"><strong>【刪除】</strong><span class="strike">{{ segs(item.old_segments) }}</span></p>
+      {% else %}
+        <p class="text removed"><strong>【修改前】</strong><span class="strike">{{ segs(item.old_segments) }}</span></p>
+        <p class="text new"><strong>【修改後】</strong>{{ segs(item.new_segments) }}</p>
+      {% endif %}
+      {% if item.note %}<p class="note">備註：{{ item.note }}</p>{% endif %}
+    </article>
+    {% endfor %}
+  </section>
+
+  <section class="card">
+    <h2>Gemini AI 影響分析</h2>
+    {% set ai = result.ai %}
+    {% if ai.status == 'ok' %}
+      <p class="note">以下由 AI 依實際差異產生；標示「AI推論」者為推測，僅供參考。</p>
+      {% if ai.partial_note %}<p class="partial">{{ ai.partial_note }}</p>{% endif %}
+      <h3>變更摘要</h3>
+      <p>{{ ai.data.summary }}</p>
+      <h3>可能影響</h3>
+      {% if ai.data.impacts %}
+      <ul>
+        {% for imp in ai.data.impacts %}
+        <li><span class="tag">{{ imp.area }}</span><span class="tag {{ 'tag-infer' if imp.basis == 'AI推論' }}">{{ imp.basis }}</span>{{ imp.description }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}<p>模型未列出具體影響。</p>{% endif %}
+      <h3>風險評估</h3>
+      <p>風險程度：<span class="risk risk-{{ ai.data.risk_level }}">{{ ai.data.risk_level }}</span></p>
+      <p>判斷依據與理由：{{ ai.data.risk_reasons }}</p>
+      <h3>改善建議</h3>
+      {% if ai.data.recommendations %}
+      <ol>{% for r in ai.data.recommendations %}<li>{{ r }}</li>{% endfor %}</ol>
+      {% else %}<p>模型未提供具體建議。</p>{% endif %}
+      <h3>資訊不足之處</h3>
+      <p>{{ ai.data.information_gaps }}</p>
+    {% elif ai.status == 'skipped' %}
+      <p>{{ ai.message }}</p>
+    {% else %}
+      <div class="ai-warn">
+        <strong>AI 影響分析未完成</strong>
+        <p>{{ ai.message }}</p>
+        {% if ai.partial_note %}<p>{{ ai.partial_note }}</p>{% endif %}
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2>限制與揭露</h2>
+    <ul class="limits">
+      {% for text in result.limitations %}<li>{{ text }}</li>{% endfor %}
+      <li>差異內容（經敏感資料遮蔽後）可能已傳送至外部 AI 服務（Google Gemini）。</li>
+    </ul>
+  </section>
+  {% endif %}
+</div>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>企業文件新舊版本差異分析助手</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <header class="hero">
+      <h1>企業文件新舊版本差異分析助手</h1>
+      <p>上傳兩份 Word 文件，系統以程式比對段落差異，並由 Gemini AI 分析變更可能造成的影響。</p>
+    </header>
+
+    <form id="upload-form" class="card" action="/analyze" method="post" enctype="multipart/form-data">
+      <div class="field">
+        <label for="old_file">舊版本文件（.docx）</label>
+        <input type="file" id="old_file" name="old_file" accept=".docx" required>
+      </div>
+      <div class="field">
+        <label for="new_file">新版本文件（.docx）</label>
+        <input type="file" id="new_file" name="new_file" accept=".docx" required>
+      </div>
+      <p id="form-error" class="inline-error" hidden></p>
+      <button id="submit-btn" class="btn btn-primary" type="submit">開始分析</button>
+    </form>
+
+    <section class="card notice">
+      <h2>使用須知</h2>
+      <ul>
+        <li><strong>資料傳送：</strong>差異段落內容（不含檔名；電子郵件、身分證字號、手機號碼等會先遮蔽）會傳送至外部 AI 服務 Google Gemini 進行分析，請勿上傳不得外送的機密文件。</li>
+        <li><strong>比對範圍：</strong>僅比對 .docx 的文字段落。表格、圖片、註解、追蹤修訂、頁首頁尾等特殊元素未納入比對。</li>
+        <li><strong>段落移動：</strong>無法可靠辨識，位置改變的段落會顯示為「刪除」與「新增」。</li>
+        <li><strong>資料保存：</strong>分析結果與報告僅暫存於伺服器，逾時後自動刪除；原始文件不會被儲存或修改。</li>
+        <li>AI 分析可能出錯，僅供參考，重要決策請由專人審閱。</li>
+      </ul>
+    </section>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
